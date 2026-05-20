@@ -1,13 +1,19 @@
 import { logger } from "../../../lib/logger.js";
+import { proposeBlockPromotion } from "../actions/proposeBlockPromotion.js";
 import { proposeRollback } from "../actions/proposeRollback.js";
 import { saveBudgetWindow } from "../budget-state/store.js";
+import type { ServiceDefinition } from "../catalog/serviceDefiniton.js";
 import { evaluateBurnRate } from "../decisions/burnRate.js";
 import { explainBurnDecision } from "../decisions/explain.js";
+import { loadServiceHealthState } from "../health-state/store.js";
+import { createPolicyViolationIncident } from "../helper/createPolicyViolation.js";
 import { initializeOrRotateWindow } from "../helper/initializeBudgetWindow.js";
 import type { Incident } from "../incidents/incident.js";
 import { transitionIncident } from "../incidents/lifecycle.js";
 import { loadIncidents, saveIncident } from "../incidents/store.js";
 import { queryPrometheus } from "../observability/prometheus.js";
+import type { PolicyViolation } from "../policy/policyTypes.js";
+import { evaluatePromotion } from "../policy/promotionGate.js";
 import type { ErrorBudget } from "../slo/errorBudget.js";
 import { DEMO_APP_SLIS } from "../slo/sli.js";
 import { DEMO_APP_SLOS } from "../slo/slo.js";
@@ -169,4 +175,89 @@ const incidents = loadIncidents();
   }
 
   return { budget, newIncidentCreated };
+}
+
+function evaluatePromotionEligibility(
+  service: ServiceDefinition,
+  budget: ErrorBudget,
+): void {
+  const now = new Date();
+
+  const state = loadServiceHealthState(service.name);
+
+  const violations: PolicyViolation[] = [];
+
+  const remainingRatio = budget.total > 0 ? budget.remaining / budget.total : 0;
+
+  // HARD STOP — Exhaustion
+  if (budget.remaining <= 0) {
+    violations.push({
+      type: "error-budget-exhausted",
+      service: service.name,
+      message: "No remaining error budget — SLO contract violated.",
+      blocking: true,
+      detectedAt: new Date().toISOString(),
+    });
+  }
+
+  // SOFT FREEZE — <5% remaining
+  if (remainingRatio > 0 && remainingRatio < 0.05) {
+    violations.push({
+      type: "error-budget-near-exhaustion",
+      service: service.name,
+      message: "Remaining budget below 5% safety threshold.",
+      blocking: true,
+      detectedAt: new Date().toISOString(),
+    });
+  }
+
+  // TIME-BASED FREEZE
+  if (state?.freezeUntil) {
+    const freezeTime = new Date(state.freezeUntil).getTime();
+
+    if (freezeTime > now.getTime()) {
+      violations.push({
+        type: "freeze-window-active",
+        service: service.name,
+        message: `Promotion frozen until ${state.freezeUntil}`,
+        blocking: true,
+        detectedAt: new Date().toISOString(),
+      });
+    }
+  }
+
+  const gate = evaluatePromotion(service, {
+    total: budget.total,
+    remaining: budget.remaining,
+    burnRate: budget.burnRate,
+  });
+
+  if (!gate.allowed) {
+    violations.push(...gate.violations);
+  }
+
+  const existingPolicyIncident = loadIncidents().find(
+    (i) =>
+      i.service === service.name &&
+      i.severity === "policy-violation" &&
+      !["resolved", "postmortem-complete"].includes(i.currentState),
+  );
+
+  if (violations.length > 0) {
+    logger.warn({
+      message: "Governance blocking promotion",
+      violations,
+    });
+
+    if (!existingPolicyIncident) {
+      const policyIncident = createPolicyViolationIncident(violations);
+      proposeBlockPromotion(
+        policyIncident.id,
+        service.name,
+        violations,
+        budget,
+      );
+    }
+  }
+
 }
