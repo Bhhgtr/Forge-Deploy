@@ -1,8 +1,12 @@
 import { logger } from "../../../lib/logger.js";
+import { proposeRollback } from "../actions/proposeRollback.js";
 import { saveBudgetWindow } from "../budget-state/store.js";
 import { evaluateBurnRate } from "../decisions/burnRate.js";
 import { explainBurnDecision } from "../decisions/explain.js";
 import { initializeOrRotateWindow } from "../helper/initializeBudgetWindow.js";
+import type { Incident } from "../incidents/incident.js";
+import { transitionIncident } from "../incidents/lifecycle.js";
+import { loadIncidents, saveIncident } from "../incidents/store.js";
 import { queryPrometheus } from "../observability/prometheus.js";
 import type { ErrorBudget } from "../slo/errorBudget.js";
 import { DEMO_APP_SLIS } from "../slo/sli.js";
@@ -102,8 +106,67 @@ async function evaluateRuntimeHealth(): Promise<{
     totalBudget: budget.total,
   });
 
-  return {
-    budget,
-    newIncidentCreated: false, // or true if you track incident creation above
-  };
+const incidents = loadIncidents();
+  const activeIncident = incidents.find(
+    (i) =>
+      i.service === "demo-app" &&
+      i.severity === "exhausted" &&
+      !["resolved", "postmortem-complete"].includes(i.currentState),
+  );
+
+  let newIncidentCreated = false;
+
+  if (
+    budget.remaining <= 0 &&
+    severity === "exhausted" &&
+    !activeIncident?.severity?.includes("policy")
+  ) {
+
+    if (!activeIncident) {
+      newIncidentCreated = true;
+
+      const incident: Incident = {
+        id: `incident-${Date.now()}`,
+        service: "demo-app",
+        severity,
+        currentState: "detected",
+        timeline: [],
+        createdAt: new Date().toISOString(),
+      };
+
+      const investigating = transitionIncident(
+        incident,
+        "investigating",
+        explanation,
+        "system",
+      );
+
+      saveIncident(investigating);
+
+
+      proposeRollback(investigating, budget, explanation);
+    } else {
+      proposeRollback(activeIncident, budget, explanation);
+    }
+  }
+
+  if (severity === "normal") {
+    const mitigatedIncident = incidents.find(
+      (i) => i.service === "demo-app" && i.currentState === "mitigated",
+    );
+
+    if (mitigatedIncident) {
+      const resolved = transitionIncident(
+        mitigatedIncident,
+        "resolved",
+        "Availability SLO returned to healthy state",
+        "system",
+      );
+
+      saveIncident(resolved);
+
+    }
+  }
+
+  return { budget, newIncidentCreated };
 }
