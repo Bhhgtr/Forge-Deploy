@@ -1,8 +1,10 @@
+import { ZodError } from "zod";
 import { logger } from "../../../lib/logger.js";
 import { proposeBlockPromotion } from "../actions/proposeBlockPromotion.js";
 import { proposeRollback } from "../actions/proposeRollback.js";
 import { appendAudit } from "../audit/store.js";
 import { saveBudgetWindow } from "../budget-state/store.js";
+import { loadService } from "../catalog/catalogStore.js";
 import type { ServiceDefinition } from "../catalog/serviceDefiniton.js";
 import { evaluateBurnRate } from "../decisions/burnRate.js";
 import { explainBurnDecision } from "../decisions/explain.js";
@@ -18,6 +20,7 @@ import { evaluatePromotion } from "../policy/promotionGate.js";
 import type { ErrorBudget } from "../slo/errorBudget.js";
 import { DEMO_APP_SLIS } from "../slo/sli.js";
 import { DEMO_APP_SLOS } from "../slo/slo.js";
+import { mapZodIssuesToPolicyViolations } from "../policy/zodToPolicyMapper.js";
 
 async function evaluateRuntimeHealth(): Promise<{
   budget: ErrorBudget;
@@ -290,4 +293,39 @@ function evaluatePromotionEligibility(
     }
   }
 
+}
+
+export async function evaluateDemoService(): Promise<void> {
+  let service;
+
+  try {
+    service = loadService("demo-app");
+  } catch (error: unknown) {
+    if (error instanceof ZodError) {
+      const violations = mapZodIssuesToPolicyViolations(
+        error.issues,
+        "demo-app",
+      );
+
+      const policyIncident = createPolicyViolationIncident(violations);
+
+      proposeBlockPromotion(policyIncident.id, "demo-app", violations, {
+        total: 0,
+        remaining: 0,
+        burnRate: 0,
+        consumed: 0,
+      });
+
+      return;
+    }
+
+    throw error;
+  }
+
+  const { budget, newIncidentCreated } = await evaluateRuntimeHealth();
+
+  // Skip governance only on first detection cycle
+  if (!newIncidentCreated) {
+    evaluatePromotionEligibility(service, budget);
+  }
 }
