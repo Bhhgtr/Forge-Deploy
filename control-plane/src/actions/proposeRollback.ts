@@ -1,4 +1,5 @@
 import { logger } from "../../../lib/logger.js";
+import { appendAudit } from "../audit/store.js";
 import type { Incident } from "../incidents/incident.js";
 import type { ErrorBudget } from "../slo/errorBudget.js";
 import type { ActionProposal } from "./proposal.js";
@@ -22,6 +23,13 @@ export function proposeRollback(
       "Rollback proposal already exists — returning existing",
     );
 
+    appendAudit("proposals", {
+      type: "proposal-reused",
+      proposalId: existing.id,
+      incidentId: incident.id,
+      action: existing.type,
+    });
+
     return existing;
   }
 
@@ -43,6 +51,16 @@ export function proposeRollback(
   };
 
   saveProposal(proposal);
+
+  appendAudit("proposals", {
+    type: "proposal-created",
+    proposalId: proposal.id,
+    incidentId: proposal.incidentId,
+    service: incident.service,
+    action: proposal.type,
+    status: proposal.status,
+    justification: proposal.justification,
+  });
 
   logger.info(
     { proposalId: proposal.id, incidentId: incident.id },
