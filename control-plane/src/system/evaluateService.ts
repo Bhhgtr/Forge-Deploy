@@ -1,6 +1,7 @@
 import { logger } from "../../../lib/logger.js";
 import { proposeBlockPromotion } from "../actions/proposeBlockPromotion.js";
 import { proposeRollback } from "../actions/proposeRollback.js";
+import { appendAudit } from "../audit/store.js";
 import { saveBudgetWindow } from "../budget-state/store.js";
 import type { ServiceDefinition } from "../catalog/serviceDefiniton.js";
 import { evaluateBurnRate } from "../decisions/burnRate.js";
@@ -60,6 +61,13 @@ async function evaluateRuntimeHealth(): Promise<{
     else simulatedFailures = 10;
   }
 
+  appendAudit("metrics", {
+    service: "demo-app",
+    metric: "request_latency_p95",
+    observedLatencyMs: latencyMs,
+    targetMs: latencySLO.target,
+  });
+
   const allowedBadEvents = totalRequests * (1 - availabilitySLO.target);
 
   const windowDurationMs = 30 * 24 * 60 * 60 * 1000; // 30 days
@@ -112,6 +120,15 @@ async function evaluateRuntimeHealth(): Promise<{
     totalBudget: budget.total,
   });
 
+  appendAudit("budget", {
+    service: "demo-app",
+    total: budget.total,
+    remaining: budget.remaining,
+    consumed: budget.consumed,
+    burnRate: budget.burnRate,
+    freezeUntil: loadServiceHealthState("demo-app")?.freezeUntil,
+  });
+
 const incidents = loadIncidents();
   const activeIncident = incidents.find(
     (i) =>
@@ -149,6 +166,13 @@ const incidents = loadIncidents();
 
       saveIncident(investigating);
 
+      appendAudit("incidents", {
+        service: investigating.service,
+        incidentId: investigating.id,
+        state: investigating.currentState,
+        severity: investigating.severity,
+        timeline: investigating.timeline,
+      });
 
       proposeRollback(investigating, budget, explanation);
     } else {
@@ -171,6 +195,12 @@ const incidents = loadIncidents();
 
       saveIncident(resolved);
 
+      appendAudit("incidents", {
+        service: resolved.service,
+        incidentId: resolved.id,
+        state: resolved.currentState,
+        resolved: true,
+      });
     }
   }
 
