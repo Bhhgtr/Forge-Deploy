@@ -21,11 +21,13 @@ import type { ErrorBudget } from "../slo/errorBudget.js";
 import { DEMO_APP_SLIS } from "../slo/sli.js";
 import { DEMO_APP_SLOS } from "../slo/slo.js";
 import { mapZodIssuesToPolicyViolations } from "../policy/zodToPolicyMapper.js";
+import { unfreezeIfExpired, updateFreezeWindow } from "../helper/freezeWindow.js";
 
 async function evaluateRuntimeHealth(): Promise<{
   budget: ErrorBudget;
   newIncidentCreated: boolean;
 }> {
+  unfreezeIfExpired("demo-app");
 
   const latencySLI = DEMO_APP_SLIS.find(
     (s) => s.name === "request_latency_p95",
@@ -147,6 +149,8 @@ const incidents = loadIncidents();
     severity === "exhausted" &&
     !activeIncident?.severity?.includes("policy")
   ) {
+
+    updateFreezeWindow("demo-app", 15 * 60 * 1000);
 
     if (!activeIncident) {
       newIncidentCreated = true;
