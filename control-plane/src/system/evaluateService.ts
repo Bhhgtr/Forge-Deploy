@@ -21,7 +21,10 @@ import type { ErrorBudget } from "../slo/errorBudget.js";
 import { DEMO_APP_SLIS } from "../slo/sli.js";
 import { DEMO_APP_SLOS } from "../slo/slo.js";
 import { mapZodIssuesToPolicyViolations } from "../policy/zodToPolicyMapper.js";
-import { unfreezeIfExpired, updateFreezeWindow } from "../helper/freezeWindow.js";
+import {
+  unfreezeIfExpired,
+  updateFreezeWindow,
+} from "../helper/freezeWindow.js";
 
 async function evaluateRuntimeHealth(): Promise<{
   budget: ErrorBudget;
@@ -134,7 +137,7 @@ async function evaluateRuntimeHealth(): Promise<{
     freezeUntil: loadServiceHealthState("demo-app")?.freezeUntil,
   });
 
-const incidents = loadIncidents();
+  const incidents = loadIncidents();
   const activeIncident = incidents.find(
     (i) =>
       i.service === "demo-app" &&
@@ -149,7 +152,6 @@ const incidents = loadIncidents();
     severity === "exhausted" &&
     !activeIncident?.severity?.includes("policy")
   ) {
-
     updateFreezeWindow("demo-app", 15 * 60 * 1000);
 
     if (!activeIncident) {
@@ -286,6 +288,14 @@ function evaluatePromotionEligibility(
       violations,
     });
 
+    appendAudit("governance", {
+      service: service.name,
+      violations,
+      freezeActive: Boolean(state?.freezeUntil),
+      budgetRemaining: budget.remaining,
+      decision: violations.length > 0 ? "blocked" : "allowed",
+    });
+
     if (!existingPolicyIncident) {
       const policyIncident = createPolicyViolationIncident(violations);
       proposeBlockPromotion(
@@ -297,6 +307,15 @@ function evaluatePromotionEligibility(
     }
   }
 
+  if (violations.length === 0) {
+    appendAudit("governance", {
+      service: service.name,
+      violations,
+      freezeActive: Boolean(state?.freezeUntil),
+      budgetRemaining: budget.remaining,
+      decision: violations.length > 0 ? "blocked" : "allowed",
+    });
+  }
 }
 
 export async function evaluateDemoService(): Promise<void> {
