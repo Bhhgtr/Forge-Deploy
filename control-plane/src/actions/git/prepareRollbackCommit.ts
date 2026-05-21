@@ -5,7 +5,6 @@ import { config } from "../../config/index.js";
 import { GitOperationError } from "./errors/error.js";
 import { ensureEnvRepo } from "./repoManager.js";
 
-
 export async function prepareRollbackCommit(
   imageTag: string,
   branchName: string,

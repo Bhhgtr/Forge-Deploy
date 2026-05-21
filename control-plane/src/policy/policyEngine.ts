@@ -1,4 +1,3 @@
-
 import type { ServiceDefinition } from "../catalog/serviceDefiniton.js";
 import type { PolicyViolation } from "./policyTypes.js";
 

@@ -2,7 +2,6 @@ import fs from "fs";
 import path from "path";
 import type { BudgetWindowState } from "./budgetWindowDefinition.js";
 
-
 const BASE = path.join(process.cwd(), "control-plane", "state", "budget");
 
 function getFilePath(service: string): string {

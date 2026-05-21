@@ -2,7 +2,6 @@ import axios from "axios";
 import { config } from "../../config/index.js";
 import { GitHubAPIError } from "./errors/error.js";
 
-
 export async function createRollbackPR(
   branchName: string,
   commitMessage: string,

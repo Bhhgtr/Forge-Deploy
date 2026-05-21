@@ -1,7 +1,5 @@
-
 import type { BudgetWindowState } from "../budget-state/budgetWindowDefinition.js";
 import { loadBudgetWindow, saveBudgetWindow } from "../budget-state/store.js";
-
 
 export function initializeOrRotateWindow(
   service: string,

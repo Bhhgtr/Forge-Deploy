@@ -4,7 +4,6 @@ import path from "path";
 import { config } from "../../config/index.js";
 import { GitOperationError } from "./errors/error.js";
 
-
 export async function ensureEnvRepo(): Promise<string> {
   if (!config.github.repoPath) {
     throw new Error("GITHUB_REPO_PATH not configured");

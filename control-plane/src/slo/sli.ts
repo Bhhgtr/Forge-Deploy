@@ -32,4 +32,3 @@ export const DEMO_APP_SLIS: SLI[] = [
 		`,
   },
 ];
-

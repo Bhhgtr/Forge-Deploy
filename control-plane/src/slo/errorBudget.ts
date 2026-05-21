@@ -143,7 +143,3 @@ export function calculateErrorBudget(
 //   Full error budget exhausted.
 //
 // =====================================================
-
-
-
-

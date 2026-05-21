@@ -3,7 +3,6 @@ import path from "path";
 import { z } from "zod";
 import type { ServiceDefinition } from "./serviceDefiniton.js";
 
-
 const CATALOG_DIR = path.resolve(process.cwd(), "catalog");
 
 const ServiceSchema = z.object({
