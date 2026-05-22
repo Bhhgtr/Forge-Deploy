@@ -4,8 +4,7 @@ import { proposeBlockPromotion } from "../actions/proposeBlockPromotion.js";
 import { proposeRollback } from "../actions/proposeRollback.js";
 import { appendAudit } from "../audit/store.js";
 import { saveBudgetWindow } from "../budget-state/store.js";
-import { loadService } from "../catalog/catalogStore.js";
-import type { ServiceDefinition } from "../catalog/serviceDefiniton.js";
+
 import { evaluateBurnRate } from "../decisions/burnRate.js";
 import { explainBurnDecision } from "../decisions/explain.js";
 import { loadServiceHealthState } from "../health-state/store.js";
@@ -25,6 +24,8 @@ import {
   unfreezeIfExpired,
   updateFreezeWindow,
 } from "../helper/freezeWindow.js";
+import type { ServiceDefinition } from "../catalog/serviceDefiniton.js";
+import { loadService } from "../catalog/catalogStore.js";
 
 async function evaluateRuntimeHealth(): Promise<{
   budget: ErrorBudget;

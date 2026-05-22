@@ -3,7 +3,7 @@ import { loadIncidents, saveIncident } from "../incidents/store.js";
 import { transitionIncident } from "../incidents/lifecycle.js";
 import { prepareRollbackCommit } from "../actions/git/prepareRollbackCommit.js";
 import { appendAudit } from "../audit/store.js";
-import { createRollbackPR } from "../actions/git/createRollbackPr.js";
+import { createRollbackPR } from "../actions/git/createRollbackPR.js";
 
 export async function handleProposalApproval(
   proposalId: string,
@@ -34,7 +34,7 @@ export async function handleProposalApproval(
   }
 
   const branchName = `rollback-${proposal.incidentId}`;
-  const imageTag = "55fccf8";
+  const imageTag = "28ba202b197d411331eb38ddbf4acd3d966a4284";
 
   await prepareRollbackCommit(imageTag, branchName);
 
