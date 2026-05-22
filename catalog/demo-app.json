@@ -1,0 +1,14 @@
+{
+  "name": "demo-app",
+  "owner": "platform-team",
+  "slos": [
+    {
+      "name": "latency-p95-300ms",
+      "target": 0.999
+    }
+  ],
+  "deploymentStrategy": "canary",
+  "rollbackStrategy": "git-revert",
+  "runbookUrl": "https://internal/runbooks/demo-app",
+  "costBudget": 100
+}
