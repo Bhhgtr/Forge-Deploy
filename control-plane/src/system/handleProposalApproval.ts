@@ -34,7 +34,7 @@ export async function handleProposalApproval(
   }
 
   const branchName = `rollback-${proposal.incidentId}`;
-  const imageTag = "28ba202b197d411331eb38ddbf4acd3d966a4284";
+  const imageTag = "7299998";
 
   await prepareRollbackCommit(imageTag, branchName);
 

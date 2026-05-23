@@ -23,7 +23,7 @@ export async function createRollbackPR(
   try {
     const response = await client.post("/pulls", {
       title: prTitle,
-      head: branchName,
+      head: `${config.github.owner}:${branchName}`,
       base: config.github.baseBranch,
       body: prBody,
     });

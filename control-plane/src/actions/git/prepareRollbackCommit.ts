@@ -48,7 +48,7 @@ export async function prepareRollbackCommit(
     );
   }
 
-  const rolloutPath = path.join(repoPath, "apps/demo-app/rollout.yaml");
+  const rolloutPath = path.join(repoPath, "apps/demo-app/rollout.yml");
 
   let content: string;
   try {
