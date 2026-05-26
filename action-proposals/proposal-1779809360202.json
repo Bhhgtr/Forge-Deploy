@@ -3,7 +3,7 @@
   "incidentId": "incident-policy-1779809360202",
   "type": "block-promotion",
   "createdAt": "2026-05-26T15:29:20.202Z",
-  "status": "proposed",
+  "status": "approved",
   "justification": {
     "severity": "policy-violation",
     "explanation": "Promotion blocked due to policy violations",

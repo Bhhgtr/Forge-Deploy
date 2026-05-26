@@ -2,7 +2,7 @@
   "id": "incident-policy-1779809360202",
   "service": "demo-app",
   "severity": "policy-violation",
-  "currentState": "investigating",
+  "currentState": "mitigated",
   "timeline": [
     {
       "from": "detected",
@@ -10,6 +10,13 @@
       "at": "2026-05-26T15:29:20.202Z",
       "triggeredBy": "system",
       "reason": "[{\"type\":\"error-budget-exhausted\",\"service\":\"demo-app\",\"message\":\"No remaining error budget — SLO contract violated.\",\"blocking\":true,\"detectedAt\":\"2026-05-26T15:29:20.201Z\"},{\"type\":\"error-budget-exhausted\",\"service\":\"demo-app\",\"message\":\"Error budget exhausted - production freeze active\",\"blocking\":true,\"detectedAt\":\"2026-05-26T15:29:20.201Z\"},{\"type\":\"error-budget-exhausted\",\"service\":\"demo-app\",\"message\":\"Remaining budget below safety threshold (1%)\",\"blocking\":true,\"detectedAt\":\"2026-05-26T15:29:20.201Z\"},{\"type\":\"error-budget-exhausted\",\"service\":\"demo-app\",\"message\":\"Burn rate too high (6x) — risky to deploy\",\"blocking\":true,\"detectedAt\":\"2026-05-26T15:29:20.201Z\"}]"
+    },
+    {
+      "from": "investigating",
+      "to": "mitigated",
+      "at": "2026-05-26T15:34:15.964Z",
+      "triggeredBy": "user",
+      "reason": "Rollback PR created: https://github.com/Bhhgtr/Forge-Deploy-Environment/pull/24"
     }
   ],
   "createdAt": "2026-05-26T15:29:20.202Z"
