@@ -257,6 +257,28 @@ It doesn't deploy software. It decides whether software _should_ be deployed —
 
 > _Shipping fast is only valuable if the system stays healthy. Forge-Deploy makes sure you know which one you're trading off._
 
+--
+
+## Related Repositories
+
+Forge-Deploy is one part of a three-repo system. Each repo has a distinct role:
+
+| Repo | Role |
+|---|---|
+| **Forge-Deploy** | This repo — control plane, SLO evaluation, incident management, proposals |
+| [Forge-Deploy-Environment](https://github.com/Buthsaraa/Forge-Deploy-Environment) | GitOps manifests — Argo CD Application, Argo Rollouts canary strategy |
+| [Forge-Deploy-Demo-App](https://github.com/Buthsaraa/Forge-Deploy-Demo-App) | Target workload — Express service exposing health, metrics, and failure endpoints |
+
+The typical flow across repos:
+
+```
+Forge-Deploy-Demo-App  →  GHCR (image)  →  Forge-Deploy-Environment (manifests)
+                                                        ↑
+                                          Forge-Deploy (proposes changes via PR)
+```
+
+---
+
 ---
 
 ## License
