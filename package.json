@@ -10,7 +10,8 @@
     "dev": "concurrently -k -n tsc,node \"tsc -b --watch --preserveWatchOutput\" \"nodemon --watch dist --ext js --exec node dist/control-plane/src/index.js\"",
     "test": "vitest",
     "lint:fix": "eslint . --fix",
-    "format": "prettier --write ."
+    "format": "prettier --write .",
+    "report:json": "node dist/control-plane/src/system/reliabilityReport.js > report.json"
   },
   "keywords": [],
   "author": "",
